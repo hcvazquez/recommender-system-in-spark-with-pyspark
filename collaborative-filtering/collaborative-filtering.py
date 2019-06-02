@@ -1,6 +1,5 @@
 # import and create sparksession object
 from pyspark.sql import SparkSession
-
 spark = SparkSession.builder.appName('rc').getOrCreate()
 
 # import the required functions and libraries
@@ -11,14 +10,13 @@ def loadDataFrame(fileName, fileSchema):
     return (spark.read.format("csv").schema(fileSchema).option("header", "true").option("mode", "DROPMALFORMED").csv(
         "/FileStore/tables/%s" % (fileName)))
 
+
 from pyspark.sql.types import *
 
 movieRatingSchema = StructType([StructField("userId", IntegerType(), True), StructField("movieId", IntegerType(), True),
     StructField("rating", FloatType(), True), StructField("timestamp", StringType(), True)])
-
 movieSchema = StructType([StructField("movieId", IntegerType(), True), StructField("title", StringType(), True),
     StructField("genres", StringType(), True)])
-
 MovieRatingsDF = loadDataFrame("ratings.csv", movieRatingSchema).cache()
 MoviesDF = loadDataFrame("movies.csv", movieSchema).cache()
 
@@ -106,7 +104,6 @@ print(rmse)
 
 # Recommend top movies  which user might like 
 
-
 # create dataset of all distinct movies 
 unique_movies = indexed.select('title_new').distinct()
 
@@ -115,7 +112,6 @@ unique_movies.count()
 
 # assigning alias name 'a' to unique movies df
 a = unique_movies.alias('a')
-
 user_id = 85
 
 # creating another dataframe which contains already watched movie by active user 
@@ -129,7 +125,6 @@ b = watched_movies.alias('b')
 
 # joining both tables on left join 
 total_movies = a.join(b, a.title_new == b.title_new, how='left')
-
 total_movies.show(10, False)
 
 # selecting movies which active user is yet to rate or watch
@@ -145,14 +140,11 @@ remaining_movies.show(10, False)
 
 # making recommendations using ALS recommender model and selecting only top 'n' movies
 recommendations = rec_model.transform(remaining_movies).orderBy('prediction', ascending=False)
-
 recommendations.show(5, False)
 
 # converting title_new values back to movie titles
 movie_title = IndexToString(inputCol="title_new", outputCol="title", labels=model.labels)
-
 final_recommendations = movie_title.transform(recommendations)
-
 final_recommendations.show(10, False)
 
 
